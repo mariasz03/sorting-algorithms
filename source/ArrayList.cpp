@@ -21,129 +21,22 @@ void ArrayList::addLast(Movie movie) { // Dodanie elementu na koniec tablicy
     array_[size_] = movie;
     size_++;
 }
-void ArrayList::addFirst(Movie movie) { // Dodanie elementu na poczatek tablicy
-    if(size_ >= capacity_) { // Stworzenie nowej, dwa razy wiekszej tablicy oraz skopiowanie starej tablicy do nowej z przesunieciem elementow o 1 w prawo
-        int newCapacity = capacity_ * 2;
-        Movie* newArray = new Movie[newCapacity];
-        for (int i = 0; i < size_; i++) {
-            newArray[i+1] = array_[i];
-        }
-        delete[] array_;
-        array_ = newArray;
-        capacity_ = newCapacity;
-    } else { // Przesuniecie elementów o 1 w prawo
-        for (int i = size_; i > 0; i--) {
-                array_[i] = array_[i-1];
-            }
-    }
-    array_[0] = movie;
-    size_++;
-}
-void ArrayList::addAt(int index, Movie movie) // Dodanie elementu na okreslonym indeksie
-{
-    if (index >= 0 && index <= size_) { // Stworzenie nowej, dwa razy wiekszej tablicy oraz skopiowanie starej tablicy do nowej z przesunieciem 
-    // elementow za indeksem o 1, w prawo (po to, aby zrobic miejsce na element)                                                                                                        
-        if(size_ >= capacity_) {
-            int newCapacity = capacity_ * 2;
-            Movie* newArray = new Movie[newCapacity];
 
-            for (int i = 0; i < index; i++) { // tutaj nie ma potrzeby iteracji od konca, poniewaz i tak kopiujemy elementy do nowej tablicy
-                newArray[i] = array_[i];
-            }
-            newArray[index] = movie;
-            for (int i = index; i < size_; i++) {
-                newArray[i+1] = array_[i];
-            }
-
-            delete[] array_;
-            array_ = newArray;
-            capacity_ = newCapacity;
-        } else { // Przesuniecie elementow za indeksem o 1, w prawo
-            for (int i = size_; i > index; i--) { // iteracja od konca
-                array_[i] = array_[i-1];
-            }
-            array_[index] = movie;
-        }
-        size_++;
-    } else {
-        std::cout << "Niepoprawny index.";
-    }
-
+void ArrayList::swap(int index1, int index2) {
+    Movie temp;
+    temp = array_[index1];
+    array_[index1] = array_[index2];
+    array_[index2] = temp;
 }
-
-void ArrayList::removeLast() { // Usuniecie ostatniego elementu
-    if (size_ > 0) {
-        if(size_ - 1 <= capacity_ / 2 && capacity_ > initialCapacity_) {
-            int newCapacity = capacity_ / 2;
-            Movie* newArray = new Movie[newCapacity];
-            for (int i = 0; i < size_ - 1; i++) {
-                newArray[i] = array_[i];
-            }
-            delete[] array_;
-            array_ = newArray;
-            capacity_ = newCapacity;
-        }
-        size_--;
-    }
-}
-void ArrayList::removeFirst() { // Usuniecie pierwszego elementu
-    if (size_ > 0) {
-        if(size_-1 <= capacity_ / 2 && capacity_ > initialCapacity_) { 
-            int newCapacity = capacity_ / 2;
-            Movie* newArray = new Movie[newCapacity];
-            for (int i = 0; i < size_ - 1; i++) {
-                newArray[i] = array_[i+1];
-            }
-            delete[] array_;
-            array_ = newArray;
-            capacity_ = newCapacity;
-        } else { // Przesuniecie elementów o 1 w lewo
-            for (int i = 0; i < size_ - 1; i++) {
-                array_[i] = array_[i+1];
-            }
-        }
-        size_--;
-    }
-}
-void ArrayList::removeFrom(int index) {
-    if (size_ > 0 && index >= 0 && index <= size_) {
-        if (size_ - 1 <= capacity_ / 2 && capacity_ > initialCapacity_) {
-            int newCapacity = capacity_ / 2;
-            Movie* newArray = new Movie[newCapacity];
-            for (int i = 0; i < index; i++) {
-                newArray[i] = array_[i];
-            }
-            for (int i = index; i < size_ - 1; i++) {
-                newArray[i] = array_[i+1];
-            }
-            delete[] array_;
-            array_ = newArray;
-            capacity_ = newCapacity;
-        } else { // Przesuniecie elementów o 1 w lewo, zaczynajac dopiero od tego ktory chcemy usunac
-            for (int i = index; i < size_ - 1; i++) {
-                array_[i] = array_[i+1];
-            }
-        }
-        size_--;
-    } else {
-        std::cout << "Niepoprawny index.";
-    }
-}
-
 ArrayList::Movie ArrayList::findElement(std::string title) {
-    Movie nullMovie;
     for (int i = 0; i < size_; i++) {
         if (array_[i].title == title) {
             return array_[i];
         }
     }
-    return nullMovie;
+    throw std::runtime_error("Movie with given title not found!");
 }
-void ArrayList::display() {
-    for(int i = 0; i < size_; i++) {
-        std::cout << i << ": " << array_[i].title << " " << array_[i].rating <<  std::endl;
-    }
-}
+
 void ArrayList::loadFromFile(std::string inputFilePath, int size) {
     std::ifstream inputFile(inputFilePath);
 
@@ -154,8 +47,8 @@ void ArrayList::loadFromFile(std::string inputFilePath, int size) {
 
     std::string line;
     std::getline(inputFile, line); // Pierwsza linijka - naglowek
-    int loadedLines = 0;
-    int deletedLines = 0;
+    int loadedLines = 0; // Licznik załadownych linijek
+    int deletedLines = 0; // Licznik usuniętych linijek
     int i = 0;
     
     while (std::getline(inputFile, line) && (size < 0 || i < size)) {
@@ -211,10 +104,7 @@ void ArrayList::saveToFile(std::string outputFilePath) {
 }
 ArrayList::Movie ArrayList::getElement(int index) {
     if (index < 0 || index >= size_) {
-        Movie err;
-        err.title = "NULL";
-        err.rating = 0;
-        return err;
+        throw std::out_of_range("Index out of range.");
     }
     return array_[index];
 }
@@ -224,18 +114,41 @@ int ArrayList::getSize() {
 int ArrayList::getCapacity() {
     return capacity_;
 }
-
+int ArrayList::getRating(int index) {
+    if (index < 0 || index >= size_) {
+        throw std::out_of_range("Index out of range.");
+    }
+    return array_[index].rating;
+}
+int ArrayList::getMax() { // Zwraca najwieksza wartosc z pola rating
+    int max = 0;
+    for(int i = 0; i < size_; i++) {
+        if (array_[i].rating > max) {
+            max = int(array_[i].rating);
+        }
+    }
+    return max;
+}
+int ArrayList::getMin() { // Zwraca najmniejsza wartosc z pola rating
+    int min = 10;
+    for(int i = 0; i < size_; i++) {
+        if (array_[i].rating < min) {
+            min = int(array_[i].rating);
+        }
+    }
+    return min;
+}
 // ALGORYTMY SORTUJACE
 
 void ArrayList::mergeSort() {
-    mergeSortHelper(0, size_ - 1);
+    mergeSortHelper(0, size_ - 1); // Wywołanie dla całej listy
 }
 void ArrayList::mergeSortHelper(int left, int right) {
     if (left < right) {
         int mid = left + (right - left) / 2;
-        mergeSortHelper(left, mid);
-        mergeSortHelper(mid + 1, right);
-        merge(left, mid, right);
+        mergeSortHelper(left, mid); // Wywołanie rekurencyjne dla lewej strony listy
+        mergeSortHelper(mid + 1, right); // Wywołanie rekurencyjne dla prawej strony listy
+        merge(left, mid, right); // Sortowanie i scalenie
     }
 }
 
@@ -266,24 +179,72 @@ void ArrayList::merge(int left, int mid, int right) {
         k++;
     }
 
-    while (i < leftSize) {
-        array_[k] = leftArray[i];
-        i++;
-        k++;
-    }
-
-    while (j < rightSize) {
-        array_[k] = rightArray[j];
-        j++;
-        k++;
-    }
-
     delete[] leftArray;
     delete[] rightArray;
 }
 
-
 void ArrayList::bucketSort() {
-    // Bucket sort implementation
+    // int min = getMin();
+    // int max = getMax();
+    // int bucketsNumber = getMax() - getMin() + 1;
+    int bucketsNumber = 11;
+
+    ArrayList* bucket[bucketsNumber];
+    for (int i = 0; i < bucketsNumber; i++) {
+        bucket[i] = new ArrayList;
+    }
+
+    for (int i = 0; i < size_; i++) {
+        bucket[int(array_[i].rating)]->addLast(array_[i]);
+    }
+
+    // for (int i = 0; i < bucketsNumber; i++) {
+    //     if (bucket[i]->size_ > 0) { // Sprawdzenie, czy bucket nie jest pusty
+    //         bucket[i]->mergeSort();
+    //     }
+    // } // Sortowanie kubelkow w tym przypadku jest zbedne, poniewaz i tak kazdy kubelek ma rankingi o tej samej wartosci
+
+    int k = 0;
+    for (int i = 0; i < bucketsNumber; i++) {
+        for (int j = 0; j < bucket[i]->size_; j++) {
+            array_[k] = bucket[i]->array_[j];
+            k++;
+        }
+        delete bucket[i];
+    }
 }
 
+void ArrayList::quickSort() {
+    quickSortHelper(0, size_ - 1);
+}
+
+void ArrayList::quickSortHelper(int left, int right) {
+    if (left < right) {
+        int pivotIndex = partition(left, right);
+        quickSortHelper(left, pivotIndex - 1);
+        quickSortHelper(pivotIndex + 1, right);
+    }
+}
+
+int ArrayList::partition(int left, int right) {
+    int pivotIndex = left + (right - left) / 2;
+    Movie pivotValue = array_[pivotIndex];
+    int i = left - 1;
+    int j = right + 1;
+
+    while (true) {
+        do {
+            i++;
+        } while (array_[i].rating < pivotValue.rating);
+
+        do {
+            j--;
+        } while (array_[j].rating > pivotValue.rating);
+
+        if (i >= j) {
+            return j;
+        }
+
+        swap(i, j);
+    }
+}

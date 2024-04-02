@@ -3,19 +3,25 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <cmath>
+
 #pragma once
 
 class ArrayList {
 private:
-    int initialCapacity_;
-    int capacity_;
-    int size_; 
-public:
     struct Movie {
         std::string title;
         double rating;
     };
-    
+    Movie* array_;
+    void mergeSortHelper(int left, int right);
+    void merge(int left, int mid, int right);
+    void quickSortHelper(int left, int right);
+    int partition(int left, int right);
+    int initialCapacity_;
+    int capacity_;
+    int size_; 
+public:
     ArrayList(int capacity = 10);
     ~ArrayList();
 
@@ -26,23 +32,21 @@ public:
     void removeLast();
     void removeFirst();
     void removeFrom(int index);
+    void swap(int index1, int index2);
     Movie findElement(std::string title);
-    void display();
-    void saveToFile(std::string outputFilePath);
-    void loadFromFile(std::string inputFilePath, int size = -1);
     Movie getElement(int index);
     int getSize();
     int getCapacity();
+    int getRating(int index);
+    int getMax();
+    int getMin();
+    void display();
+    void saveToFile(std::string outputFilePath);
+    void loadFromFile(std::string inputFilePath, int size = -1);
 
     // ALGORYTMY SORTUJACE
-    void mergeSortHelper(int left, int right);
-    void merge(int left, int mid, int right);
     void mergeSort();
-    void quickSort();
     void bucketSort();
+    void quickSort();
 
-
-protected:
-    Movie* array_;
-    void merge(Movie* leftArray, Movie* rightArray);
 };
