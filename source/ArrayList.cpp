@@ -41,16 +41,15 @@ void ArrayList::loadFromFile(std::string inputFilePath, int size) {
     std::ifstream inputFile(inputFilePath);
 
     if (!inputFile.is_open()) {
-        std::cerr << "Nie mozna otworzyc pliku!";
+        std::cerr << "Error occured while opening file.";
         return;
     }
 
     std::string line;
     std::getline(inputFile, line); // Pierwsza linijka - naglowek
-    int loadedLines = 0; // Licznik załadownych linijek
-    int deletedLines = 0; // Licznik usuniętych linijek
     int i = 0;
-    
+    int properLines = 0; // Licznik załadownych linijek
+    int emptyRatingLines = 0; // Licznik usuniętych linijek
     while (std::getline(inputFile, line) && (size < 0 || i < size)) {
         Movie movie;
         std::istringstream iss(line);
@@ -79,35 +78,89 @@ void ArrayList::loadFromFile(std::string inputFilePath, int size) {
             std::getline(iss, ratingString, ',');
         }
         if (ratingString.empty()) {
-            std::cout << movie.title << ": rating is empty. Line deleted." << std::endl;
-            deletedLines++;
+            movie.rating = -1;
+            emptyRatingLines++;
         } else {
             movie.rating = std::stod(ratingString);
-            addLast(movie);
-            loadedLines++;
+            properLines++;
         }
+        addLast(movie);
         i++;
     }
-    std::cout << std::endl << "Loading completed."  << std::endl << "Lines deleted: " << deletedLines << std::endl << "Lines loaded: " << loadedLines << std::endl << "Total: " << 
-    deletedLines + loadedLines << std::endl;
+    std::cout << std::endl << "Loading from file completed."  << std::endl << "Lines with empty rating: " << emptyRatingLines << std::endl << "Proper lines: " << properLines << std::endl
+    << "Total: " << emptyRatingLines + properLines;
     inputFile.close();
 }
 void ArrayList::saveToFile(std::string outputFilePath) {
     std::ofstream outputFile(outputFilePath);
     if (!outputFile.is_open()) {
-        std::cerr << "Nie mozna otworzyc pliku!";
+        std::cerr << "Can't open a file!";
         return;
     }
     for(int i = 0; i < size_; i++) {
         outputFile << i << ": " << array_[i].title << " " << array_[i].rating <<  std::endl;
     }
 }
+
+void ArrayList::loadElements(ArrayList& array, int size) { // Funkcja ładująca size elementow z array
+    if (size == -1) {
+        size = array.getSize();
+    } 
+    for(int i = 0; i < size; i++) {
+        addLast(array.getElement(i));
+    }
+}
+
+void ArrayList::deleteEmptyRatings() {
+    int nonEmptyCount = 0;
+    for (int i = 0; i < size_; i++) {
+        if (array_[i].rating != -1) {
+            nonEmptyCount++;
+        }
+    }
+    Movie* newArray = new Movie[nonEmptyCount];
+    int newIndex = 0;
+    for (int i = 0; i < size_; i++) {
+        if (array_[i].rating != -1) {
+            newArray[newIndex] = array_[i];
+            newIndex++;
+        }
+    }
+    delete[] array_;
+    int deletedCount = size_ - nonEmptyCount;
+    array_ = newArray;
+    size_ = nonEmptyCount;
+    capacity_ = nonEmptyCount;
+    std::cout << std::endl << "Filtering data completed. Deleted " << deletedCount << " movies with no rating.";
+}
+
 ArrayList::Movie ArrayList::getElement(int index) {
     if (index < 0 || index >= size_) {
         throw std::out_of_range("Index out of range.");
     }
     return array_[index];
 }
+
+float ArrayList::ratingAverage() {
+    float sum = 0;
+    for (int i = 0; i < size_; i++) {
+        sum += array_[i].rating;
+    }
+    return (sum/size_);
+}
+
+float ArrayList::ratingMedian() {
+    if (size_ % 2) {
+        int midIndex = ceil(size_/2);
+        return array_[midIndex].rating;
+    } else {
+        int midIndex = size_/2;
+        double a = array_[midIndex].rating;
+        double b = array_[midIndex-1].rating;
+        return (a+b)/2;
+    }
+}
+
 int ArrayList::getSize() {
     return size_;
 }
@@ -138,11 +191,12 @@ int ArrayList::getMin() { // Zwraca najmniejsza wartosc z pola rating
     }
     return min;
 }
-// ALGORYTMY SORTUJACE
 
+// ALGORYTMY SORTUJACE
 void ArrayList::mergeSort() {
     mergeSortHelper(0, size_ - 1); // Wywołanie dla całej listy
 }
+
 void ArrayList::mergeSortHelper(int left, int right) {
     if (left < right) {
         int mid = left + (right - left) / 2;
@@ -169,13 +223,25 @@ void ArrayList::merge(int left, int mid, int right) {
     int i = 0, j = 0, k = left;
 
     while (i < leftSize && j < rightSize) {
-        if (leftArray[i].rating <= rightArray[j].rating) {
+        if (leftArray[i].rating < rightArray[j].rating) {
             array_[k] = leftArray[i];
             i++;
         } else {
             array_[k] = rightArray[j];
             j++;
         }
+        k++;
+    }
+
+    while (i < leftSize) {
+        array_[k] = leftArray[i];
+        i++;
+        k++;
+    }
+
+    while (j < rightSize) {
+        array_[k] = rightArray[j];
+        j++;
         k++;
     }
 
@@ -214,37 +280,31 @@ void ArrayList::bucketSort() {
     }
 }
 
+
 void ArrayList::quickSort() {
     quickSortHelper(0, size_ - 1);
 }
 
 void ArrayList::quickSortHelper(int left, int right) {
     if (left < right) {
-        int pivotIndex = partition(left, right);
-        quickSortHelper(left, pivotIndex - 1);
-        quickSortHelper(pivotIndex + 1, right);
-    }
-}
-
-int ArrayList::partition(int left, int right) {
-    int pivotIndex = left + (right - left) / 2;
-    Movie pivotValue = array_[pivotIndex];
-    int i = left - 1;
-    int j = right + 1;
-
-    while (true) {
-        do {
-            i++;
-        } while (array_[i].rating < pivotValue.rating);
-
-        do {
-            j--;
-        } while (array_[j].rating > pivotValue.rating);
-
-        if (i >= j) {
-            return j;
+        int pivotIndex = 
+        rand() % (right - left + 1) + left;
+        Movie pivot = array_[pivotIndex];
+        
+        int i = left, j = right;
+        while (j >= i) {
+            while(array_[i].rating < pivot.rating) i++;
+            while (array_[j].rating > pivot.rating) j--;
+            if (i <= j) {
+                swap(i, j);
+                i++;
+                j--;
+            }
         }
-
-        swap(i, j);
+        
+        quickSortHelper(i, right);
+        quickSortHelper(left, j);
     }
 }
+
+

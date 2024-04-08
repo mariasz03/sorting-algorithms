@@ -35,6 +35,8 @@ public:
     void swap(int index1, int index2);
     Movie findElement(std::string title);
     Movie getElement(int index);
+    float ratingAverage();
+    float ratingMedian();
     int getSize();
     int getCapacity();
     int getRating(int index);
@@ -42,7 +44,9 @@ public:
     int getMin();
     void display();
     void saveToFile(std::string outputFilePath);
-    void loadFromFile(std::string inputFilePath, int size = -1);
+    void loadFromFile(std::string inputFilePath, int size = -1); 
+    void loadElements(ArrayList& array, int size = -1);
+    void deleteEmptyRatings();
 
     // ALGORYTMY SORTUJACE
     void mergeSort();
